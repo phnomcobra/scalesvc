@@ -1,0 +1,6 @@
+url = "http://logagg.phnomlab.net/smartscale"
+
+[logging]
+retention_days = 30
+level = 10
+path = ".\\log"
