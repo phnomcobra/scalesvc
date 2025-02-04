@@ -1,6 +1,6 @@
 """Post decoded values to API endpoint."""
 from aiohttp import ClientSession
-from pydantic import BaseModel, PositiveInt, PositiveFloat
+from pydantic import BaseModel, StrictInt, PositiveFloat
 
 from scalesvc.config import CONFIG
 from scalesvc import logging
@@ -11,8 +11,8 @@ class WeightRequestObject(BaseModel): # pylint: disable=too-few-public-methods
     """The class encapsulates and validates API requests."""
     weight_lbs: PositiveFloat
     weight_kg: PositiveFloat
-    resistance_one_kohms: PositiveInt
-    resistance_two_kohms: PositiveInt
+    resistance_one_kohms: StrictInt
+    resistance_two_kohms: StrictInt
 
 async def post(sample: WeightRequestObject):
     """Post sample data to API endpoint.
