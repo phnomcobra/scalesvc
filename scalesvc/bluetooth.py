@@ -2,7 +2,7 @@
 import asyncio
 from enum import Enum, auto
 from time import time
-from typing import Union
+from typing import Any, Callable, Coroutine, Union
 
 from bleak import BleakScanner, BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -61,6 +61,22 @@ def apply_checksum(message: bytearray) -> bytearray:
     message[len(message)-1] = verify
     return message
 
+async def retry(call: Callable, *args, **kwargs) -> Any:
+    """Retry"""
+    tries = 3
+    backoff = 1
+    exception = None
+    while tries > 0 and operating():
+        try:
+            return await call(*args, **kwargs)
+        except Exception as e: # pylint: disable=broad-exception-caught
+            exception = e
+            logging.warning(f'{str(call)}({args},{kwargs}): {str(e)}')
+            await asyncio.sleep(backoff)
+        finally:
+            tries -= 1
+    raise exception
+
 async def loop():
     """Entry point for the scanner"""
     logging.info("Starting Bluetooth Scanner...")
@@ -79,12 +95,13 @@ async def loop():
 
                 try:
                     logging.info(f"Connecting to {device.address} ...")
-                    await client.connect()
+                    await retry(client.connect)
                     logging.info("Connected")
 
                     await asyncio.sleep(1.0)
 
-                    logging.info(f"Pairing: {await client.pair()}")
+                    pair_status = await retry(client.pair)
+                    logging.info(f"Pairing: {pair_status}")
 
                     for service in client.services:
                         for characteristic in service.characteristics:
@@ -97,7 +114,7 @@ async def loop():
 
                     try:
                         logging.info(f"Enable notifications: {NOTIFICATION_CHARACTERISTIC}")
-                        await client.start_notify(NOTIFICATION_CHARACTERISTIC, handler)
+                        await retry(client.start_notify, NOTIFICATION_CHARACTERISTIC, handler)
 
                         await asyncio.sleep(1.0)
 
@@ -108,7 +125,7 @@ async def loop():
                             (0x13, 0x09, 0x15, weight_byte, 0x10, 0x00, 0x00, 0x00, 0x00))
                         message = apply_checksum(message)
                         await handler(WRITE_CHARACTERISTIC, message, Direction.TX)
-                        await client.write_gatt_char(WRITE_CHARACTERISTIC, message)
+                        await retry(client.write_gatt_char, WRITE_CHARACTERISTIC, message)
 
                         await asyncio.sleep(1.0)
 
@@ -118,7 +135,7 @@ async def loop():
                         message = bytearray()
                         message.extend((0x02, *scale_time.to_bytes(4, 'little')))
                         await handler(WRITE_CHARACTERISTIC, message, Direction.TX)
-                        await client.write_gatt_char(WRITE_CHARACTERISTIC, message)
+                        await retry(client.write_gatt_char, WRITE_CHARACTERISTIC, message)
 
                         await asyncio.sleep(1.0)
 
