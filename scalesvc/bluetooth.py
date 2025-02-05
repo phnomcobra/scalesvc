@@ -81,11 +81,25 @@ async def loop():
                     logging.info(f"Connecting to {device.address} ...")
                     await client.connect()
                     logging.info("Connected")
+
+                    await asyncio.sleep(1.0)
+
                     logging.info(f"Pairing: {await client.pair()}")
+
+                    for service in client.services:
+                        for characteristic in service.characteristics:
+                            reading = None
+                            try:
+                                reading = await client.read_gatt_char(characteristic)
+                            except Exception as read_error: # pylint: disable=broad-exception-caught
+                                reading = str(read_error)
+                            logging.debug(f'{characteristic}: {reading}')
 
                     try:
                         logging.info(f"Enable notifications: {NOTIFICATION_CHARACTERISTIC}")
                         await client.start_notify(NOTIFICATION_CHARACTERISTIC, handler)
+
+                        await asyncio.sleep(1.0)
 
                         logging.info('Initializing parameters')
                         message = bytearray()
@@ -96,6 +110,8 @@ async def loop():
                         await handler(WRITE_CHARACTERISTIC, message, Direction.TX)
                         await client.write_gatt_char(WRITE_CHARACTERISTIC, message)
 
+                        await asyncio.sleep(1.0)
+
                         logging.info('Initializing time')
                         # seconds since 2000-01-01 00:00:00 (utc)
                         scale_time = int(time()) - 946702800
@@ -103,6 +119,8 @@ async def loop():
                         message.extend((0x02, *scale_time.to_bytes(4, 'little')))
                         await handler(WRITE_CHARACTERISTIC, message, Direction.TX)
                         await client.write_gatt_char(WRITE_CHARACTERISTIC, message)
+
+                        await asyncio.sleep(1.0)
 
                         # Poll the battery level until the scale shuts off
                         # pylint: disable=line-too-long
