@@ -2,7 +2,7 @@
 import asyncio
 from enum import Enum, auto
 from time import time
-from typing import Any, Callable, Coroutine, Union
+from typing import Any, Callable, Union
 
 from bleak import BleakScanner, BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
