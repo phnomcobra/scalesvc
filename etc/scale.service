@@ -1,0 +1,15 @@
+[Unit]
+Description=Scale Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/scalesvc
+ExecStart=/usr/bin/python3 /opt/scalesvc/main.py
+Restart=always
+KillMode=process
+TimeoutSec=5
+
+[Install]
+WantedBy=multi-user.target
