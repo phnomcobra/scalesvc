@@ -1,4 +1,4 @@
 bleak==0.22.3
-pydantic==1.10.2
+pydantic==1.10.12
 toml==0.10.2
 aiohttp==3.11.11
