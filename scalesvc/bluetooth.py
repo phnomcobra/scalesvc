@@ -100,8 +100,10 @@ async def loop():
 
                     await asyncio.sleep(1.0)
 
-                    pair_status = await retry(client.pair)
-                    logging.info(f"Pairing: {pair_status}")
+                    try:
+                        logging.info(f"Pairing: {await client.pair()}")
+                    except Exception as pair_error: # pylint: disable=broad-exception-caught
+                        logging.warning(f"Pairing: {pair_error}")
 
                     for service in client.services:
                         for characteristic in service.characteristics:
